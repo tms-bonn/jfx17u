@@ -68,6 +68,15 @@ jmethodID jViewNotifyPreeditMode;
 jmethodID jViewNotifyMenu;
 jfieldID  jViewPtr;
 
+jclass jGestureCls;
+jmethodID jGestureNotifyBeginTouchEvent;
+jmethodID jGestureNotifyNextTouchEvent;
+jmethodID jGestureNotifyEndTouchEvent;
+jmethodID jGestureZoomPerformed;
+jmethodID jGestureRotatePerformed;
+jmethodID jGestureDragUpdatePerformed;
+jmethodID jGestureLongPressPerformed;
+
 jmethodID jWindowNotifyResize;
 jmethodID jWindowNotifyMove;
 jmethodID jWindowNotifyDestroy;
@@ -331,9 +340,84 @@ JNI_OnLoad(JavaVM *jvm, void *reserved)
     return JNI_VERSION_1_6;
 }
 
+jclass ClassForName(JNIEnv *env, const char *className)
+{
+    // TODO: cache classCls as JNI global ref
+    jclass classCls = env->FindClass("java/lang/Class");
+    if (check_and_clear_exception(env) || !classCls) {
+        fprintf(stderr, "ClassForName error: classCls == NULL");
+        return NULL;
+    }
+
+    // TODO: cache forNameMID as static
+    jmethodID forNameMID =
+        env->GetStaticMethodID(classCls, "forName", "(Ljava/lang/String;)Ljava/lang/Class;");
+    if (check_and_clear_exception(env) || !forNameMID) {
+        fprintf(stderr, "ClassForName error: forNameMID == NULL");
+        return NULL;
+    }
+
+    jstring classNameStr = env->NewStringUTF(className);
+    if (check_and_clear_exception(env) || classNameStr == NULL) {
+        fprintf(stderr, "ClassForName error: classNameStrs == NULL");
+        return NULL;
+    }
+
+    jclass foundClass = (jclass)env->CallStaticObjectMethod(classCls,
+        forNameMID, classNameStr);
+    if (check_and_clear_exception(env)) return NULL;
+
+    env->DeleteLocalRef(classNameStr);
+    env->DeleteLocalRef(classCls);
+
+    return foundClass;
+}
+
 #ifdef STATIC_BUILD
 }
 #endif
+
+extern "C" {
+JNIEXPORT void JNICALL Java_com_sun_glass_ui_gtk_GtkGestureSupport__1initIDs(
+        JNIEnv *env, jclass cls)
+{
+    jclass clazz = env->FindClass("com/sun/glass/ui/gtk/GtkGestureSupport");
+
+    check_and_clear_exception(env);
+
+    jGestureCls = (jclass) env->NewGlobalRef(clazz);
+
+    check_and_clear_exception(env);
+
+    jGestureNotifyBeginTouchEvent = env->GetStaticMethodID(clazz, "notifyBeginTouchEvent", "(Lcom/sun/glass/ui/View;IZI)V");
+
+    check_and_clear_exception(env);
+
+    jGestureNotifyNextTouchEvent = env->GetStaticMethodID(clazz, "notifyNextTouchEvent", "(Lcom/sun/glass/ui/View;IJIIII)V");
+
+    check_and_clear_exception(env);
+
+    jGestureNotifyEndTouchEvent = env->GetStaticMethodID(clazz, "notifyEndTouchEvent", "(Lcom/sun/glass/ui/View;)V");
+
+    check_and_clear_exception(env);
+
+    jGestureZoomPerformed = env->GetStaticMethodID(clazz, "gestureZoomPerformed", "(Lcom/sun/glass/ui/View;IZIIIIF)V");
+
+    check_and_clear_exception(env);
+
+    jGestureRotatePerformed = env->GetStaticMethodID(clazz, "gestureRotatePerformed", "(Lcom/sun/glass/ui/View;IZIIIIF)V");
+
+    check_and_clear_exception(env);
+
+    jGestureDragUpdatePerformed = env->GetStaticMethodID(clazz, "gestureDragUpdatePerformed", "(Lcom/sun/glass/ui/View;IZIIIIFF)V");
+
+    check_and_clear_exception(env);
+
+    jGestureLongPressPerformed = env->GetStaticMethodID(clazz, "gestureLongPressPerformed", "(Lcom/sun/glass/ui/View;IZJIIII)V");
+
+    check_and_clear_exception(env);
+}
+}
 
 void
 glass_throw_exception(JNIEnv * env,

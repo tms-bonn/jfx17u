@@ -25,8 +25,15 @@
 #ifndef GLASS_WINDOW_H
 #define        GLASS_WINDOW_H
 
+#include "glass_general.h"
+
 #include <gtk/gtk.h>
 #include <X11/Xlib.h>
+#include <gdk/gdkx.h>
+
+#ifdef GLASS_GTK3
+#include <gtk/gtkx.h>
+#endif
 
 #include <jni.h>
 #include <set>
@@ -153,6 +160,8 @@ public:
     virtual void process_key(GdkEventKey*) = 0;
     virtual void process_state(GdkEventWindowState*) = 0;
 
+    virtual void process_touch_event(GdkEvent*) = 0;
+
     virtual void notify_state(jint) = 0;
     virtual void notify_on_top(bool) {}
 
@@ -193,6 +202,12 @@ protected:
     GtkWidget* gtk_widget;
     GdkWindow* gdk_window;
     GdkWMFunction gdk_windowManagerFunctions;
+
+#ifdef GLASS_GTK3
+    int lastTouchInputCount;
+    std::vector<GdkEventTouch> lastTouchInputBuf;
+    std::vector<GdkEventTouch> thisTouchInputBuf;
+#endif
 
     bool is_iconified;
     bool is_maximized;
@@ -254,6 +269,8 @@ public:
     void process_key(GdkEventKey*);
     void process_state(GdkEventWindowState*);
 
+    void process_touch_event(GdkEvent*);
+
     void notify_state(jint);
 
     int getEmbeddedX() { return 0; }
@@ -269,6 +286,7 @@ protected:
     virtual void applyShapeMask(void*, uint width, uint height) = 0;
 private:
     bool im_filter_keypress(GdkEventKey*);
+    void lazyInitGestureSupport();
 };
 
 class WindowContextPlug: public WindowContextBase {

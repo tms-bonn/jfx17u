@@ -197,6 +197,15 @@ final class GtkView extends View {
         lastCaret = caret;
     }
 
+    @Override
+    protected void notifyMouse(int type, int button,
+                               int x, int y, int xAbs, int yAbs, int modifiers,
+                               boolean isPopupTrigger, boolean isSynthesized) {
+        super.notifyMouse(type, button, x, y, xAbs, yAbs, modifiers,
+                isPopupTrigger,
+                isSynthesized);
+    }
+
     protected void notifyInputMethodCaret(int pos, int direction, int style) {
         switch (direction) {
             case 0: //XIMForwardChar
