@@ -23,7 +23,6 @@ final class GtkGestureSupport {
     private static int modifiers;
     private static boolean isDirect;
     private static long singleTouchId;
-    private static GtkView longTouchView;
 
     public static void notifyBeginTouchEvent(View view, int modifiers,
                                              boolean isDirect,
@@ -37,7 +36,6 @@ final class GtkGestureSupport {
             GtkView gtkView = (GtkView) view;
             switch (state) {
                 case TouchEvent.TOUCH_MOVED:
-                    longTouchView = null;
                     if(singleTouchId == 0 && touchSupport.getTouchCount() == 1) {
                         singleTouchId = id;
                         gtkView.notifyMouse(MouseEvent.DOWN, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
@@ -46,19 +44,13 @@ final class GtkGestureSupport {
                     }
                     break;
                 case TouchEvent.TOUCH_RELEASED:
-                    if(longTouchView != null) {
-                        longTouchView.notifyMouse(MouseEvent.DOWN, MouseEvent.BUTTON_RIGHT, x, y, xAbs, yAbs, KeyEvent.MODIFIER_BUTTON_SECONDARY, false, true);
-                        gtkView.notifyMouse(MouseEvent.UP, MouseEvent.BUTTON_RIGHT, x, y, xAbs, yAbs, 0, false, true);
-                        longTouchView = null;
-                    } else {
-                        if(singleTouchId == 0) {
-                            singleTouchId = id;
-                            gtkView.notifyMouse(MouseEvent.DOWN, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
-                        }
-                        if(singleTouchId == id) {
-                            gtkView.notifyMouse(MouseEvent.UP, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, 0, false, true);
-                            singleTouchId = 0;
-                        }
+                    if(singleTouchId == 0) {
+                        singleTouchId = id;
+                        gtkView.notifyMouse(MouseEvent.DOWN, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
+                    }
+                    if(singleTouchId == id) {
+                        gtkView.notifyMouse(MouseEvent.UP, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, 0, false, true);
+                        singleTouchId = 0;
                     }
                     break;
                 default:
@@ -72,16 +64,6 @@ final class GtkGestureSupport {
     public static void notifyEndTouchEvent(View view) {
         touchSupport.notifyEndTouchEvent(view);
         gestureFinished(view, touchSupport.getTouchCount(), false);
-    }
-
-    public static void gestureLongPressPerformed(View view, int modifiers,
-                                                 boolean isDirect, long id,
-                                                 int x, int y, int xAbs,
-                                                 int yAbs) {
-        if (view instanceof GtkView) {
-            GtkView gtkView = (GtkView) view;
-            longTouchView = gtkView;
-        }
     }
 
     public static void gestureZoomPerformed(View view, int modifiers,

@@ -453,22 +453,6 @@ static gboolean drag_update(GtkGestureDrag *gesture,
     return false;
 }
 
-static gboolean long_press(GtkGestureLongPress *gesture,
-                            gdouble x,
-                            gdouble y,
-                            WindowContextBase *base) {
-    GdkEventSequence *sequence = gtk_gesture_single_get_current_sequence(GTK_GESTURE_SINGLE(gesture));
-    const GdkEvent* event = gtk_gesture_get_last_event(GTK_GESTURE(gesture), sequence);
-    jlong touchID = jlong(sequence);
-    mainEnv->CallStaticObjectMethod(jGestureCls,
-                                            jGestureLongPressPerformed,
-                                            base->get_jview(), jint(0), JNI_FALSE, touchID,
-                                            jint(event->touch.x), jint(event->touch.y),
-                                            jint(event->touch.x_root), jint(event->touch.y_root));
-    CHECK_JNI_EXCEPTION_RET(mainEnv, false);
-
-    return false;
-}
 #endif
 
 void WindowContextBase::process_mouse_motion(GdkEventMotion* event) {
@@ -928,14 +912,6 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
         g_signal_connect (drag, "drag-update",
                           G_CALLBACK (drag_update), this);
     //    g_object_weak_ref (G_OBJECT (GTK_WIDGET(window)), (GWeakNotify) g_object_unref, drag);
-
-        /* Long press */
-        GtkGesture* longPress = gtk_gesture_long_press_new (gtk_widget);
-        g_signal_connect (longPress, "pressed",
-                          G_CALLBACK (long_press), this);
-        gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (longPress),
-                                                    GTK_PHASE_TARGET);
-    //    g_object_weak_ref (G_OBJECT (GTK_WIDGET(window)), (GWeakNotify) g_object_unref, zoom);
 
         #endif
 }

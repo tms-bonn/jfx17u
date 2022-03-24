@@ -75,7 +75,6 @@ jmethodID jGestureNotifyEndTouchEvent;
 jmethodID jGestureZoomPerformed;
 jmethodID jGestureRotatePerformed;
 jmethodID jGestureDragUpdatePerformed;
-jmethodID jGestureLongPressPerformed;
 
 jmethodID jWindowNotifyResize;
 jmethodID jWindowNotifyMove;
@@ -410,10 +409,6 @@ JNIEXPORT void JNICALL Java_com_sun_glass_ui_gtk_GtkGestureSupport__1initIDs(
     check_and_clear_exception(env);
 
     jGestureDragUpdatePerformed = env->GetStaticMethodID(clazz, "gestureDragUpdatePerformed", "(Lcom/sun/glass/ui/View;IZIIIIFF)V");
-
-    check_and_clear_exception(env);
-
-    jGestureLongPressPerformed = env->GetStaticMethodID(clazz, "gestureLongPressPerformed", "(Lcom/sun/glass/ui/View;IZJIIII)V");
 
     check_and_clear_exception(env);
 }

@@ -178,7 +178,6 @@ private:
     extern jmethodID jGestureZoomPerformed; // com.sun.glass.ui.GtkGestureSupport#gestureZoomPerformed (Lcom/sun/glass/ui/View;IZIIIIF)V
     extern jmethodID jGestureRotatePerformed; // com.sun.glass.ui.GtkGestureSupport#gestureRotatePerformed (Lcom/sun/glass/ui/View;IZIIIIF)V
     extern jmethodID jGestureDragUpdatePerformed; // com.sun.glass.ui.GtkGestureSupport#gestureDragUpdatePerformed (Lcom/sun/glass/ui/View;IZIIIIFF)V
-    extern jmethodID jGestureLongPressPerformed; // com.sun.glass.ui.GtkGestureSupport#gestureLongPressPerformed (Lcom/sun/glass/ui/View;IZJIIII)V
 
     extern jmethodID jWindowNotifyResize; // com.sun.glass.ui.Window#notifyResize (III)V
     extern jmethodID jWindowNotifyMove; // com.sun.glass.ui.Window#notifyMove (II)V
