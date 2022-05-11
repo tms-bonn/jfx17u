@@ -175,6 +175,7 @@ private:
     extern jmethodID jGestureNotifyBeginTouchEvent; // com.sun.glass.ui.GtkGestureSupport#notifyBeginTouchEvent (Lcom/sun/glass/ui/View;IZI)V
     extern jmethodID jGestureNotifyNextTouchEvent; // com.sun.glass.ui.GtkGestureSupport#notifyNextTouchEvent (Lcom/sun/glass/ui/View;IJIIII)V
     extern jmethodID jGestureNotifyEndTouchEvent; // com.sun.glass.ui.GtkGestureSupport#notifyEndTouchEvent (Lcom/sun/glass/ui/View;)V
+    extern jmethodID jGestureNotifyTouchToMouseEvent; // com.sun.glass.ui.GtkGestureSupport#notifyTouchToMouseEvent (Lcom/sun/glass/ui/View;IIJIII)V
     extern jmethodID jGestureZoomPerformed; // com.sun.glass.ui.GtkGestureSupport#gestureZoomPerformed (Lcom/sun/glass/ui/View;IZIIIIF)V
     extern jmethodID jGestureRotatePerformed; // com.sun.glass.ui.GtkGestureSupport#gestureRotatePerformed (Lcom/sun/glass/ui/View;IZIIIIF)V
     extern jmethodID jGestureDragUpdatePerformed; // com.sun.glass.ui.GtkGestureSupport#gestureDragUpdatePerformed (Lcom/sun/glass/ui/View;IZIIIIFF)V

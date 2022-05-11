@@ -188,6 +188,14 @@ void WindowContextBase::process_touch_event(GdkEvent* event) {
         mainEnv->CallStaticObjectMethod(
                 jGestureCls, jGestureNotifyEndTouchEvent, jview);
         CHECK_JNI_EXCEPTION(mainEnv);
+
+        mainEnv->CallStaticObjectMethod(jGestureCls,
+                                        jGestureNotifyTouchToMouseEvent,
+                                        jview, glass_modifier, eventID, touchID,
+                                        jint(touchEvent.x), jint(touchEvent.y),
+                                        jint(touchEvent.x_root), jint(touchEvent.y_root));
+        CHECK_JNI_EXCEPTION(mainEnv);
+
     }
     #endif
 }
@@ -419,7 +427,7 @@ static gboolean rotation_angle_changed(GtkGestureRotate *gesture,
         CHECK_JNI_EXCEPTION_RET(mainEnv, false);
     }
 
-    return false;
+    return true;
 }
 
 static gboolean zoom_scale_changed(GtkGestureZoom *gesture,
@@ -435,7 +443,7 @@ static gboolean zoom_scale_changed(GtkGestureZoom *gesture,
         CHECK_JNI_EXCEPTION_RET(mainEnv, false);
     }
 
-    return false;
+    return true;
 }
 
 static gboolean drag_update(GtkGestureDrag *gesture,
@@ -450,7 +458,7 @@ static gboolean drag_update(GtkGestureDrag *gesture,
                                             jint(event->touch.x_root), jint(event->touch.y_root), jdouble(offset_x), jdouble(offset_y));
     CHECK_JNI_EXCEPTION_RET(mainEnv, false);
 
-    return false;
+    return true;
 }
 
 #endif
