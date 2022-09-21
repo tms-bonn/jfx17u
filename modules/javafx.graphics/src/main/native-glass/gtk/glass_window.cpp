@@ -435,10 +435,13 @@ static gboolean zoom_scale_changed(GtkGestureZoom *gesture,
                                    WindowContextBase *base) {
     if(base->get_jview()) {
         GdkEvent* event = gtk_get_current_event();
+        double x;
+        double y;
+        gtk_gesture_get_bounding_box_center((GtkGesture*)gesture, &x, &y);
         mainEnv->CallStaticObjectMethod(jGestureCls,
                                                 jGestureZoomPerformed,
                                                 base->get_jview(), jint(0), JNI_TRUE,
-                                                jint(event->touch.x), jint(event->touch.y),
+                                                jint(x), jint(y),
                                                 jint(event->touch.x_root), jint(event->touch.y_root), jdouble(scale));
         CHECK_JNI_EXCEPTION_RET(mainEnv, false);
     }
