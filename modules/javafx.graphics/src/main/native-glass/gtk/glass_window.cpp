@@ -158,18 +158,21 @@ void WindowContextBase::process_touch_event(GdkEvent* event) {
         const bool isDirect = false;
 
         jint glass_modifier = gdk_modifier_mask_to_glass(touchEvent.state);
-        mainEnv->CallStaticObjectMethod(jGestureCls, jGestureNotifyBeginTouchEvent,
-                                    jview, glass_modifier, jboolean(isDirect),
-                                    jint(1));
-        CHECK_JNI_EXCEPTION(mainEnv);
 
         jlong touchID = jlong(touchEvent.sequence);
         jint eventID = 0;
-        if (event->type == GDK_TOUCH_UPDATE) {
-            eventID = com_sun_glass_events_TouchEvent_TOUCH_MOVED;
-        }
+
         if (event->type == GDK_TOUCH_BEGIN) {
             eventID = com_sun_glass_events_TouchEvent_TOUCH_PRESSED;
+
+            mainEnv->CallStaticObjectMethod(jGestureCls, jGestureNotifyBeginTouchEvent,
+                                    jview, glass_modifier, jboolean(isDirect),
+                                    jint(1));
+            CHECK_JNI_EXCEPTION(mainEnv);
+
+        }
+        if (event->type == GDK_TOUCH_UPDATE) {
+            eventID = com_sun_glass_events_TouchEvent_TOUCH_MOVED;
         }
         if (event->type == GDK_TOUCH_END) {
             eventID = com_sun_glass_events_TouchEvent_TOUCH_RELEASED;
@@ -185,22 +188,25 @@ void WindowContextBase::process_touch_event(GdkEvent* event) {
                                         jint(touchEvent.x_root), jint(touchEvent.y_root));
         CHECK_JNI_EXCEPTION(mainEnv);
 
-        mainEnv->CallStaticObjectMethod(
-                jGestureCls, jGestureNotifyEndTouchEvent, jview);
-        CHECK_JNI_EXCEPTION(mainEnv);
-
-        mainEnv->CallStaticObjectMethod(jGestureCls,
-                                        jGestureNotifyTouchToMouseEvent,
-                                        jview, glass_modifier, eventID, touchID,
-                                        jint(touchEvent.x), jint(touchEvent.y),
-                                        jint(touchEvent.x_root), jint(touchEvent.y_root));
-        CHECK_JNI_EXCEPTION(mainEnv);
+        if (event->type == GDK_TOUCH_END || event->type == GDK_TOUCH_CANCEL) {
+            mainEnv->CallStaticObjectMethod(
+                    jGestureCls, jGestureNotifyEndTouchEvent, jview);
+            CHECK_JNI_EXCEPTION(mainEnv);
+        }
 
     }
     #endif
 }
 
 void WindowContextBase::process_focus(GdkEventFocus* event) {
+
+    if (!event->in || isEnabled()) {
+        if (!event->in) {
+            // reset gesture signal events when the window loses focus
+            WindowContextBase::reset_gesture_signals();
+        }
+    }
+
     if (!event->in && WindowContextBase::sm_mouse_drag_window == this) {
         ungrab_mouse_drag_focus();
     }
@@ -426,7 +432,6 @@ static gboolean rotation_angle_changed(GtkGestureRotate *gesture,
                                                 jint(event->touch.x_root), jint(event->touch.y_root), jdouble(delta));
         CHECK_JNI_EXCEPTION_RET(mainEnv, false);
     }
-
     return true;
 }
 
@@ -445,7 +450,6 @@ static gboolean zoom_scale_changed(GtkGestureZoom *gesture,
                                                 jint(event->touch.x_root), jint(event->touch.y_root), jdouble(scale));
         CHECK_JNI_EXCEPTION_RET(mainEnv, false);
     }
-
     return true;
 }
 
@@ -453,14 +457,16 @@ static gboolean drag_update(GtkGestureDrag *gesture,
                             gdouble offset_x,
                             gdouble offset_y,
                             WindowContextBase *base) {
-    GdkEvent* event = gtk_get_current_event();
-    mainEnv->CallStaticObjectMethod(jGestureCls,
-                                            jGestureDragUpdatePerformed,
-                                            base->get_jview(), jint(0), JNI_TRUE,
-                                            jint(event->touch.x), jint(event->touch.y),
-                                            jint(event->touch.x_root), jint(event->touch.y_root), jdouble(offset_x), jdouble(offset_y));
-    CHECK_JNI_EXCEPTION_RET(mainEnv, false);
 
+    if(base->get_jview()) {
+        GdkEvent* event = gtk_get_current_event();
+        mainEnv->CallStaticObjectMethod(jGestureCls,
+                                                jGestureDragUpdatePerformed,
+                                                base->get_jview(), jint(0), JNI_TRUE,
+                                                jint(event->touch.x), jint(event->touch.y),
+                                                jint(event->touch.x_root), jint(event->touch.y_root), jdouble(offset_x), jdouble(offset_y));
+        CHECK_JNI_EXCEPTION_RET(mainEnv, false);
+    }
     return true;
 }
 
@@ -826,7 +832,6 @@ WindowContextBase::~WindowContextBase() {
 WindowFrameExtents WindowContextTop::normal_extents = {28, 1, 1, 1};
 WindowFrameExtents WindowContextTop::utility_extents = {28, 1, 1, 1};
 
-
 WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long _screen,
         WindowFrameType _frame_type, WindowType type, GdkWMFunction wmf) :
             WindowContextBase(),
@@ -894,37 +899,57 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
         gdk_window_set_functions(gdk_window, wmf);
     }
 
+    connect_gesture_signals();
+
     if (frame_type == TITLED) {
         request_frame_extents();
     }
+}
 
-    #ifdef GLASS_GTK3
-        /* Rotate */
-        GtkGesture *rotate = gtk_gesture_rotate_new (gtk_widget);
-        g_signal_connect(rotate, "angle-changed",
-                          G_CALLBACK (rotation_angle_changed), this);
-        gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (rotate),
-                                                    GTK_PHASE_TARGET);
-    //        g_object_weak_ref (G_OBJECT (GTK_WIDGET(window)), (GWeakNotify) g_object_unref, rotate);
+void WindowContextBase::connect_gesture_signals() {
+#ifdef GLASS_GTK3
+    /* Rotate */
+    rotate = gtk_gesture_rotate_new (gtk_widget);
+    g_signal_connect(rotate, "angle-changed",
+                      G_CALLBACK (rotation_angle_changed), this);
+    gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (rotate),
+                                                GTK_PHASE_TARGET);
 
+    /* Zoom */
+    zoom = gtk_gesture_zoom_new (gtk_widget);
+    g_signal_connect (zoom, "scale-changed",
+                      G_CALLBACK (zoom_scale_changed), this);
+    gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (zoom),
+                                                GTK_PHASE_TARGET);
 
-        /* Zoom */
-        GtkGesture* zoom = gtk_gesture_zoom_new (gtk_widget);
-        g_signal_connect (zoom, "scale-changed",
-                          G_CALLBACK (zoom_scale_changed), this);
-        gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (zoom),
-                                                    GTK_PHASE_TARGET);
-    //    g_object_weak_ref (G_OBJECT (GTK_WIDGET(window)), (GWeakNotify) g_object_unref, zoom);
+    /* Drag */
+    drag = gtk_gesture_drag_new(gtk_widget);
+    gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (drag),
+                                                GTK_PHASE_TARGET);
+    g_signal_connect (drag, "drag-update",
+                      G_CALLBACK (drag_update), this);
+#endif
+}
 
-        /* Drag */
-        GtkGesture* drag = gtk_gesture_drag_new(gtk_widget);
-        gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (drag),
-                                                    GTK_PHASE_TARGET);
-        g_signal_connect (drag, "drag-update",
-                          G_CALLBACK (drag_update), this);
-    //    g_object_weak_ref (G_OBJECT (GTK_WIDGET(window)), (GWeakNotify) g_object_unref, drag);
+void WindowContextBase::reset_gesture_signals() {
+#ifdef GLASS_GTK3
+    if(jview)
+    {
+        GdkEventSequence* lastSequence = gtk_gesture_get_last_updated_sequence(drag);
+        const GdkEvent* event = gtk_gesture_get_last_event(drag, lastSequence);
 
-        #endif
+        if (event && event->type == GDK_TOUCH_UPDATE) {
+            mainEnv->CallStaticObjectMethod(jGestureCls,
+                                            jGestureReleaseTouchEvents, jview);
+            CHECK_JNI_EXCEPTION(mainEnv);
+        }
+    }
+
+    gtk_event_controller_reset(GTK_EVENT_CONTROLLER (rotate));
+    gtk_event_controller_reset(GTK_EVENT_CONTROLLER (zoom));
+    gtk_event_controller_reset(GTK_EVENT_CONTROLLER (drag));
+
+#endif
 }
 
 // Applied to a temporary full screen window to prevent sending events to Java

@@ -22,17 +22,34 @@ final class GtkGestureSupport {
     private final static TouchInputSupport touchSupport = new TouchInputSupport(gestureSupport.createTouchCountListener(), true);
     private static int modifiers;
     private static boolean isDirect;
-    private static long singleTouchId;
 
     public static void notifyBeginTouchEvent(View view, int modifiers,
                                              boolean isDirect,
                                              int touchEventCount) {
+        GtkGestureSupport.modifiers = modifiers;
         touchSupport.notifyBeginTouchEvent(view, modifiers, isDirect, touchEventCount);
     }
 
     public static void notifyNextTouchEvent(View view, int state, long id, int x,
                                             int y, int xAbs, int yAbs) {
         touchSupport.notifyNextTouchEvent(view, state, id, x, y, xAbs, yAbs);
+
+        if (view instanceof GtkView && !gestureSupport.isRotating() && !gestureSupport.isZooming() && touchSupport.getTouchCount() < 2) {
+            GtkView gtkView = (GtkView) view;
+            switch (state) {
+                case TouchEvent.TOUCH_PRESSED:
+                    gtkView.notifyMouse(MouseEvent.DOWN, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers | KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
+                    break;
+                case TouchEvent.TOUCH_MOVED:
+                    gtkView.notifyMouse(MouseEvent.DRAG, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers | KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
+                    break;
+                case TouchEvent.TOUCH_RELEASED:
+                    gtkView.notifyMouse(MouseEvent.UP, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers, false, true);
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     public static void notifyEndTouchEvent(View view) {
@@ -40,25 +57,9 @@ final class GtkGestureSupport {
         gestureFinished(view, touchSupport.getTouchCount(), false);
     }
 
-    public static void notifyTouchToMouseEvent(View view, int modifiers, int state, long id, int x,
-                                               int y, int xAbs, int yAbs) {
-        if (view instanceof GtkView && !gestureSupport.isRotating() && !gestureSupport.isZooming() && touchSupport.getTouchCount() < 2) {
-            GtkView gtkView = (GtkView) view;
-            switch (state) {
-                case TouchEvent.TOUCH_PRESSED:
-                    GtkGestureSupport.modifiers = modifiers;
-                    gtkView.notifyMouse(MouseEvent.DOWN, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers | KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
-                    break;
-                case TouchEvent.TOUCH_MOVED:
-                    gtkView.notifyMouse(MouseEvent.DRAG, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers | KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
-                    break;
-                case TouchEvent.TOUCH_RELEASED:
-                    gtkView.notifyMouse(MouseEvent.UP, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, GtkGestureSupport.modifiers, false, true);
-                    break;
-                default:
-                    break;
-            }
-        }
+    public static void gestureReleaseTouchEvents(View view)
+    {
+        touchSupport.releaseTouchEvents(view);
     }
 
     public static void gestureZoomPerformed(View view, int modifiers,

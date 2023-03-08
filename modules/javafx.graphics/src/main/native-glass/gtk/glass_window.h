@@ -204,6 +204,10 @@ protected:
     GdkWMFunction gdk_windowManagerFunctions;
 
 #ifdef GLASS_GTK3
+    GtkGesture* rotate;
+    GtkGesture* zoom;
+    GtkGesture* drag;
+
     int lastTouchInputCount;
     std::vector<GdkEventTouch> lastTouchInputBuf;
     std::vector<GdkEventTouch> thisTouchInputBuf;
@@ -284,6 +288,9 @@ public:
     ~WindowContextBase();
 protected:
     virtual void applyShapeMask(void*, uint width, uint height) = 0;
+
+    void connect_gesture_signals();
+    void reset_gesture_signals();
 private:
     bool im_filter_keypress(GdkEventKey*);
     void lazyInitGestureSupport();

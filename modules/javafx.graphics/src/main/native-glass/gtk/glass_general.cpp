@@ -72,10 +72,10 @@ jclass jGestureCls;
 jmethodID jGestureNotifyBeginTouchEvent;
 jmethodID jGestureNotifyNextTouchEvent;
 jmethodID jGestureNotifyEndTouchEvent;
-jmethodID jGestureNotifyTouchToMouseEvent;
 jmethodID jGestureZoomPerformed;
 jmethodID jGestureRotatePerformed;
 jmethodID jGestureDragUpdatePerformed;
+jmethodID jGestureReleaseTouchEvents;
 
 jmethodID jWindowNotifyResize;
 jmethodID jWindowNotifyMove;
@@ -401,10 +401,6 @@ JNIEXPORT void JNICALL Java_com_sun_glass_ui_gtk_GtkGestureSupport__1initIDs(
 
     check_and_clear_exception(env);
 
-    jGestureNotifyTouchToMouseEvent = env->GetStaticMethodID(clazz, "notifyTouchToMouseEvent", "(Lcom/sun/glass/ui/View;IIJIIII)V");
-
-    check_and_clear_exception(env);
-
     jGestureZoomPerformed = env->GetStaticMethodID(clazz, "gestureZoomPerformed", "(Lcom/sun/glass/ui/View;IZIIIIF)V");
 
     check_and_clear_exception(env);
@@ -414,6 +410,10 @@ JNIEXPORT void JNICALL Java_com_sun_glass_ui_gtk_GtkGestureSupport__1initIDs(
     check_and_clear_exception(env);
 
     jGestureDragUpdatePerformed = env->GetStaticMethodID(clazz, "gestureDragUpdatePerformed", "(Lcom/sun/glass/ui/View;IZIIIIFF)V");
+
+    check_and_clear_exception(env);
+
+    jGestureReleaseTouchEvents = env->GetStaticMethodID(clazz, "gestureReleaseTouchEvents", "(Lcom/sun/glass/ui/View;)V");
 
     check_and_clear_exception(env);
 }
