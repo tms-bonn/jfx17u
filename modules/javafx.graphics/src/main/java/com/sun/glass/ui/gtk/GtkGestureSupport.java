@@ -104,6 +104,10 @@ final class GtkGestureSupport {
 
     private static void gestureFinished(View view, int touchCount,
                                         boolean isInertia) {
+        if (view == null) {
+            return;
+        }
+
         if (gestureSupport.isScrolling() && touchCount == 0) {
             gestureSupport.handleScrollingEnd(view, modifiers, touchCount, isDirect,
                     isInertia,
