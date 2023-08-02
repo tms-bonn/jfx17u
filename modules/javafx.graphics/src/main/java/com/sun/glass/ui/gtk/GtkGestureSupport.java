@@ -44,7 +44,7 @@ final class GtkGestureSupport {
                     gtkView.notifyMouse(MouseEvent.DRAG, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers | KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
                     break;
                 case TouchEvent.TOUCH_RELEASED:
-                    gtkView.notifyMouse(MouseEvent.UP, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers, false, true);
+                    gtkView.notifyMouse(MouseEvent.UP, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers ^ KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
                     break;
                 default:
                     break;
