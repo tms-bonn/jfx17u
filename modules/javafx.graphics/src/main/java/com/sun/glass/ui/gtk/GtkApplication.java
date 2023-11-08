@@ -458,12 +458,21 @@ final class GtkApplication extends Application implements
             Window owner, String folder, String filename, String title,
             int type, boolean multipleMode, ExtensionFilter[] extensionFilters, int defaultFilterIndex) {
 
+        if (invokeLaterDispatcher != null) {
+            invokeLaterDispatcher.notifyEnteringNestedEventLoop();
+        }
+
         return GtkCommonDialogs.showFileChooser(owner, folder, filename, title,
                 type, multipleMode, extensionFilters, defaultFilterIndex);
     }
 
     @Override
     protected File staticCommonDialogs_showFolderChooser(Window owner, String folder, String title) {
+
+        if (invokeLaterDispatcher != null) {
+            invokeLaterDispatcher.notifyEnteringNestedEventLoop();
+        }
+
         return GtkCommonDialogs.showFolderChooser(owner, folder, title);
     }
 
