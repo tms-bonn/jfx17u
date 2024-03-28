@@ -108,15 +108,12 @@ final class GtkGestureSupport {
                                             boolean isDirect,
                                             int x, int y, int xAbs,
                                             int yAbs, float offsetX, float offsetY) {
-        System.out.println("gestureDragUpdatePerformed: " + "x: " + x + ", y: " + y + ", xAbs: " + xAbs + ", yAbs: " + yAbs + ", offsetX: " + offsetX + ", offsetY: " + offsetY);
-
         GtkGestureSupport.modifiers = modifiers;
         GtkGestureSupport.isDirect = isDirect;
 
         if(offsetX == 0 && offsetY == 0)
         {
-            // kein drag
-            System.out.println("gestureDragUpdatePerformed: ignore");
+            // no drag
             return;
         }
 
