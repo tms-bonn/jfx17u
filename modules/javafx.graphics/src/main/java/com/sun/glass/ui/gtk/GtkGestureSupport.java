@@ -22,11 +22,15 @@ final class GtkGestureSupport {
     private final static TouchInputSupport touchSupport = new TouchInputSupport(gestureSupport.createTouchCountListener(), true);
     private static int modifiers;
     private static boolean isDirect;
+    private static int touchPressedXAbs;
+    private static int touchPressedYAbs;
 
     public static void notifyBeginTouchEvent(View view, int modifiers,
                                              boolean isDirect,
                                              int touchEventCount) {
         GtkGestureSupport.modifiers = modifiers;
+        touchPressedXAbs = 0;
+        touchPressedYAbs = 0;
         touchSupport.notifyBeginTouchEvent(view, modifiers, isDirect, touchEventCount);
     }
 
@@ -38,13 +42,26 @@ final class GtkGestureSupport {
             GtkView gtkView = (GtkView) view;
             switch (state) {
                 case TouchEvent.TOUCH_PRESSED:
+                    touchPressedXAbs = xAbs;
+                    touchPressedYAbs = yAbs;
                     gtkView.notifyMouse(MouseEvent.DOWN, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers | KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
                     break;
                 case TouchEvent.TOUCH_MOVED:
+                    /*
+                        Some touch monitors deliver touch_moved even when the finger is not moving.
+                        This means that row selection clicks are not recognized.
+                        This is recognized here and unnecessary drag events are avoided.
+                     */
+                    if(xAbs == touchPressedXAbs && yAbs == touchPressedYAbs)
+                    {
+                        return;
+                    }
                     gtkView.notifyMouse(MouseEvent.DRAG, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers | KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
                     break;
                 case TouchEvent.TOUCH_RELEASED:
-                    gtkView.notifyMouse(MouseEvent.UP, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers ^ KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
+                    touchPressedXAbs = 0;
+                    touchPressedYAbs = 0;
+                    gtkView.notifyMouse(MouseEvent.UP, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers == 0 ? modifiers : modifiers ^ KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
                     break;
                 default:
                     break;
@@ -53,6 +70,8 @@ final class GtkGestureSupport {
     }
 
     public static void notifyEndTouchEvent(View view) {
+        touchPressedXAbs = 0;
+        touchPressedYAbs = 0;
         touchSupport.notifyEndTouchEvent(view);
         gestureFinished(view, touchSupport.getTouchCount(), false);
     }
@@ -89,8 +108,17 @@ final class GtkGestureSupport {
                                             boolean isDirect,
                                             int x, int y, int xAbs,
                                             int yAbs, float offsetX, float offsetY) {
+        System.out.println("gestureDragUpdatePerformed: " + "x: " + x + ", y: " + y + ", xAbs: " + xAbs + ", yAbs: " + yAbs + ", offsetX: " + offsetX + ", offsetY: " + offsetY);
+
         GtkGestureSupport.modifiers = modifiers;
         GtkGestureSupport.isDirect = isDirect;
+
+        if(offsetX == 0 && offsetY == 0)
+        {
+            // kein drag
+            System.out.println("gestureDragUpdatePerformed: ignore");
+            return;
+        }
 
         if(touchSupport.getTouchCount() == 1) {
             Window window = view.getWindow();
