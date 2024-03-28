@@ -36,6 +36,17 @@ final class GtkGestureSupport {
 
     public static void notifyNextTouchEvent(View view, int state, long id, int x,
                                             int y, int xAbs, int yAbs) {
+
+        /*
+            Some touch monitors deliver touch_moved even when the finger is not moving.
+            This means that row selection clicks are not recognized.
+            This is recognized here and unnecessary drag events are avoided.
+         */
+        if(state == TouchEvent.TOUCH_MOVED && xAbs == touchPressedXAbs && yAbs == touchPressedYAbs && touchSupport.getTouchCount() < 2)
+        {
+            return;
+        }
+
         touchSupport.notifyNextTouchEvent(view, state, id, x, y, xAbs, yAbs);
 
         if (view instanceof GtkView && !gestureSupport.isRotating() && !gestureSupport.isZooming() && touchSupport.getTouchCount() < 2) {
@@ -47,15 +58,6 @@ final class GtkGestureSupport {
                     gtkView.notifyMouse(MouseEvent.DOWN, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers | KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
                     break;
                 case TouchEvent.TOUCH_MOVED:
-                    /*
-                        Some touch monitors deliver touch_moved even when the finger is not moving.
-                        This means that row selection clicks are not recognized.
-                        This is recognized here and unnecessary drag events are avoided.
-                     */
-                    if(xAbs == touchPressedXAbs && yAbs == touchPressedYAbs)
-                    {
-                        return;
-                    }
                     gtkView.notifyMouse(MouseEvent.DRAG, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers | KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
                     break;
                 case TouchEvent.TOUCH_RELEASED:
