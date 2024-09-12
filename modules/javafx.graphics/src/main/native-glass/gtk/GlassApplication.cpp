@@ -501,6 +501,15 @@ static void process_events(GdkEvent* event, gpointer data)
                 case GDK_OWNER_CHANGE:
                     gtk_main_do_event(event);
                     break;
+#ifdef GLASS_GTK3
+                case GDK_TOUCH_BEGIN:
+                case GDK_TOUCH_UPDATE:
+                case GDK_TOUCH_END:
+                case GDK_TOUCH_CANCEL:
+                    ctx->process_touch_event(event);
+                    gtk_main_do_event(event);
+                    break;
+#endif
                 default:
                     break;
             }

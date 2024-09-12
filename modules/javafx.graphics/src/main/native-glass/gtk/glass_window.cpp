@@ -32,6 +32,7 @@
 #include <com_sun_glass_events_ViewEvent.h>
 #include <com_sun_glass_events_MouseEvent.h>
 #include <com_sun_glass_events_KeyEvent.h>
+#include <com_sun_glass_events_TouchEvent.h>
 
 #include <com_sun_glass_ui_Window_Level.h>
 
@@ -133,7 +134,83 @@ void WindowContextBase::process_state(GdkEventWindowState* event) {
     }
 }
 
+jclass gestureSupportCls;
+
+void WindowContextBase::lazyInitGestureSupport() {
+    if (!gestureSupportCls) {
+        char* str = (char*)"com.sun.glass.ui.gtk.GtkGestureSupport";
+        const jclass cls = ClassForName(mainEnv, str);
+
+        gestureSupportCls = (jclass)mainEnv->NewGlobalRef(cls);
+        mainEnv->DeleteLocalRef(cls);
+    }
+}
+
+void WindowContextBase::process_touch_event(GdkEvent* event) {
+#ifdef GLASS_GTK3
+    if (jview) {
+        lazyInitGestureSupport();
+
+        GdkEventTouch touchEvent = event->touch;
+
+        // Sets to 'true' if source device is a touch screen
+        // and to 'false' if source device is a touch pad/pen.
+//        const bool isDirect = gdk_device_get_source(touchEvent.device) == GDK_SOURCE_TOUCHPAD;
+        const bool isDirect = false;
+
+        jint glass_modifier = gdk_modifier_mask_to_glass(touchEvent.state);
+
+        jlong touchID = jlong(touchEvent.sequence);
+        jint eventID = 0;
+
+        if (event->type == GDK_TOUCH_BEGIN) {
+            eventID = com_sun_glass_events_TouchEvent_TOUCH_PRESSED;
+
+            mainEnv->CallStaticObjectMethod(jGestureCls, jGestureNotifyBeginTouchEvent,
+                                    jview, glass_modifier, jboolean(isDirect),
+                                    jint(1));
+            CHECK_JNI_EXCEPTION(mainEnv);
+
+        }
+        if (event->type == GDK_TOUCH_UPDATE) {
+            eventID = com_sun_glass_events_TouchEvent_TOUCH_MOVED;
+        }
+        if (event->type == GDK_TOUCH_END) {
+            eventID = com_sun_glass_events_TouchEvent_TOUCH_RELEASED;
+        }
+        if (event->type == GDK_TOUCH_CANCEL) {
+            eventID = com_sun_glass_events_TouchEvent_TOUCH_RELEASED;
+        }
+
+        mainEnv->CallStaticObjectMethod(jGestureCls,
+                                        jGestureNotifyNextTouchEvent,
+                                        jview, eventID, touchID,
+                                        jint(touchEvent.x), jint(touchEvent.y),
+                                        jint(touchEvent.x_root), jint(touchEvent.y_root));
+        CHECK_JNI_EXCEPTION(mainEnv);
+
+        if (event->type == GDK_TOUCH_END || event->type == GDK_TOUCH_CANCEL) {
+            mainEnv->CallStaticObjectMethod(
+                    jGestureCls, jGestureNotifyEndTouchEvent, jview);
+            CHECK_JNI_EXCEPTION(mainEnv);
+        }
+
+    }
+    #endif
+}
+
 void WindowContextBase::process_focus(GdkEventFocus* event) {
+
+    if (!event->in || isEnabled()) {
+        if (!event->in) {
+            // reset gesture signal events when the window loses focus
+            WindowContextBase::reset_gesture_signals();
+        }
+    }
+
+    if (!event->in && WindowContextBase::sm_mouse_drag_window == this) {
+        ungrab_mouse_drag_focus();
+    }
     if (!event->in && WindowContextBase::sm_grab_window == this) {
         ungrab_focus();
     }
@@ -336,6 +413,60 @@ void WindowContextBase::process_mouse_button(GdkEventButton* event) {
         }
     }
 }
+
+#ifdef GLASS_GTK3
+static gboolean rotation_angle_changed(GtkGestureRotate *gesture,
+                                   gdouble angle,
+                                   gdouble delta,
+                                   WindowContextBase *base) {
+    if(base->get_jview()) {
+        GdkEvent* event = gtk_get_current_event();
+        mainEnv->CallStaticObjectMethod(jGestureCls,
+                                                jGestureRotatePerformed,
+                                                base->get_jview(), jint(0), JNI_TRUE,
+                                                jint(event->touch.x), jint(event->touch.y),
+                                                jint(event->touch.x_root), jint(event->touch.y_root), jdouble(delta));
+        CHECK_JNI_EXCEPTION_RET(mainEnv, false);
+    }
+    return true;
+}
+
+static gboolean zoom_scale_changed(GtkGestureZoom *gesture,
+                                   gdouble scale,
+                                   WindowContextBase *base) {
+    if(base->get_jview()) {
+        GdkEvent* event = gtk_get_current_event();
+        double x;
+        double y;
+        gtk_gesture_get_bounding_box_center((GtkGesture*)gesture, &x, &y);
+        mainEnv->CallStaticObjectMethod(jGestureCls,
+                                                jGestureZoomPerformed,
+                                                base->get_jview(), jint(0), JNI_TRUE,
+                                                jint(x), jint(y),
+                                                jint(event->touch.x_root), jint(event->touch.y_root), jdouble(scale));
+        CHECK_JNI_EXCEPTION_RET(mainEnv, false);
+    }
+    return true;
+}
+
+static gboolean drag_update(GtkGestureDrag *gesture,
+                            gdouble offset_x,
+                            gdouble offset_y,
+                            WindowContextBase *base) {
+
+    if(base->get_jview()) {
+        GdkEvent* event = gtk_get_current_event();
+        mainEnv->CallStaticObjectMethod(jGestureCls,
+                                                jGestureDragUpdatePerformed,
+                                                base->get_jview(), jint(0), JNI_TRUE,
+                                                jint(event->touch.x), jint(event->touch.y),
+                                                jint(event->touch.x_root), jint(event->touch.y_root), jdouble(offset_x), jdouble(offset_y));
+        CHECK_JNI_EXCEPTION_RET(mainEnv, false);
+    }
+    return true;
+}
+
+#endif
 
 void WindowContextBase::process_mouse_motion(GdkEventMotion* event) {
     jint glass_modifier = gdk_modifier_mask_to_glass(event->state);
@@ -777,13 +908,13 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
         glass_gtk_window_configure_from_visual(gtk_widget, visual);
     }
 
-    gtk_widget_set_events(gtk_widget, GDK_FILTERED_EVENTS_MASK);
+    gtk_widget_set_events(gtk_widget, GDK_ALL_EVENTS_MASK);
     gtk_widget_set_app_paintable(gtk_widget, TRUE);
     glass_gtk_configure_transparency_and_realize(gtk_widget, frame_type == TRANSPARENT);
 
     gtk_window_set_title(GTK_WINDOW(gtk_widget), "");
     gdk_window = gtk_widget_get_window(gtk_widget);
-    gdk_window_set_events(gdk_window, GDK_FILTERED_EVENTS_MASK);
+    gdk_window_set_events(gdk_window, GDK_ALL_EVENTS_MASK);
 
     g_object_set_data_full(G_OBJECT(gdk_window), GDK_WINDOW_DATA_CONTEXT, this, NULL);
 
@@ -794,12 +925,60 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
         gdk_window_set_functions(gdk_window, wmf);
     }
 
+    connect_gesture_signals();
+
     if (frame_type != TITLED) {
         gtk_window_set_decorated(GTK_WINDOW(gtk_widget), FALSE);
     } else {
         request_frame_extents();
         geometry.extents = get_cached_extents();
     }
+}
+
+void WindowContextBase::connect_gesture_signals() {
+#ifdef GLASS_GTK3
+    /* Rotate */
+    rotate = gtk_gesture_rotate_new (gtk_widget);
+    g_signal_connect(rotate, "angle-changed",
+                      G_CALLBACK (rotation_angle_changed), this);
+    gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (rotate),
+                                                GTK_PHASE_TARGET);
+
+    /* Zoom */
+    zoom = gtk_gesture_zoom_new (gtk_widget);
+    g_signal_connect (zoom, "scale-changed",
+                      G_CALLBACK (zoom_scale_changed), this);
+    gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (zoom),
+                                                GTK_PHASE_TARGET);
+
+    /* Drag */
+    drag = gtk_gesture_drag_new(gtk_widget);
+    gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (drag),
+                                                GTK_PHASE_TARGET);
+    g_signal_connect (drag, "drag-update",
+                      G_CALLBACK (drag_update), this);
+#endif
+}
+
+void WindowContextBase::reset_gesture_signals() {
+#ifdef GLASS_GTK3
+    if(jview)
+    {
+        GdkEventSequence* lastSequence = gtk_gesture_get_last_updated_sequence(drag);
+        const GdkEvent* event = gtk_gesture_get_last_event(drag, lastSequence);
+
+        if (event && event->type == GDK_TOUCH_UPDATE) {
+            mainEnv->CallStaticObjectMethod(jGestureCls,
+                                            jGestureReleaseTouchEvents, jview);
+            CHECK_JNI_EXCEPTION(mainEnv);
+        }
+    }
+
+    gtk_event_controller_reset(GTK_EVENT_CONTROLLER (rotate));
+    gtk_event_controller_reset(GTK_EVENT_CONTROLLER (zoom));
+    gtk_event_controller_reset(GTK_EVENT_CONTROLLER (drag));
+
+#endif
 }
 
 // Applied to a temporary full screen window to prevent sending events to Java

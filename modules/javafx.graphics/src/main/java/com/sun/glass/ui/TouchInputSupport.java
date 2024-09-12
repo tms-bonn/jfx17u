@@ -24,6 +24,8 @@
  */
 package com.sun.glass.ui;
 
+import com.sun.glass.events.KeyEvent;
+import com.sun.glass.events.MouseEvent;
 import com.sun.glass.events.TouchEvent;
 
 import java.util.HashMap;
@@ -165,5 +167,25 @@ public class TouchInputSupport
                 break;
         }
         return state;
+    }
+
+    public void releaseTouchEvents(View view)
+    {
+        if(touchCount != 0 && touch != null)
+        {
+            if (!view.isClosed()) {
+                // Release the currently pressed touch points
+                for (Map.Entry<Long, TouchCoord> e : touch.entrySet()) {
+                    TouchCoord coord = e.getValue();
+                    view.notifyMouse(MouseEvent.UP, MouseEvent.BUTTON_LEFT, coord.x, coord.y, coord.xAbs, coord.yAbs, KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
+                    view.notifyNextTouchEvent(TouchEvent.TOUCH_RELEASED, e.getKey(), coord.x, coord.y, coord.xAbs, coord.yAbs);
+                }
+            }
+            touch.clear();
+            touchCount = 0;
+            if (listener != null ) {
+                listener.touchCountChanged(this, view, 0, true);
+            }
+        }
     }
 }

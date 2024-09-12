@@ -171,6 +171,15 @@ private:
     extern jmethodID jViewNotifyMenu; //com.sun.glass.ui.View#notifyMenu (IIIIZ)V
     extern jfieldID  jViewPtr; //com.sun.glass.ui.View.ptr
 
+    extern jclass jGestureCls;   // com.sun.glass.ui.GtkGestureSupport
+    extern jmethodID jGestureNotifyBeginTouchEvent; // com.sun.glass.ui.GtkGestureSupport#notifyBeginTouchEvent (Lcom/sun/glass/ui/View;IZI)V
+    extern jmethodID jGestureNotifyNextTouchEvent; // com.sun.glass.ui.GtkGestureSupport#notifyNextTouchEvent (Lcom/sun/glass/ui/View;IJIIII)V
+    extern jmethodID jGestureNotifyEndTouchEvent; // com.sun.glass.ui.GtkGestureSupport#notifyEndTouchEvent (Lcom/sun/glass/ui/View;)V
+    extern jmethodID jGestureZoomPerformed; // com.sun.glass.ui.GtkGestureSupport#gestureZoomPerformed (Lcom/sun/glass/ui/View;IZIIIIF)V
+    extern jmethodID jGestureRotatePerformed; // com.sun.glass.ui.GtkGestureSupport#gestureRotatePerformed (Lcom/sun/glass/ui/View;IZIIIIF)V
+    extern jmethodID jGestureDragUpdatePerformed; // com.sun.glass.ui.GtkGestureSupport#gestureDragUpdatePerformed (Lcom/sun/glass/ui/View;IZIIIIFF)V
+    extern jmethodID jGestureReleaseTouchEvents; // com.sun.glass.ui.GtkGestureSupport#gestureReleaseTouchEvents (Lcom/sun/glass/ui/View;)V
+
     extern jmethodID jWindowNotifyResize; // com.sun.glass.ui.Window#notifyResize (III)V
     extern jmethodID jWindowNotifyMove; // com.sun.glass.ui.Window#notifyMove (II)V
     extern jmethodID jWindowNotifyDestroy; // com.sun.glass.ui.Window#notifyDestroy ()V
@@ -357,5 +366,7 @@ glass_settings_get_guint_opt (const gchar *schema_name,
 #ifdef __cplusplus
 }
 #endif
+
+jclass ClassForName(JNIEnv *env, const char *className);
 
 #endif        /* GLASS_GENERAL_H */
