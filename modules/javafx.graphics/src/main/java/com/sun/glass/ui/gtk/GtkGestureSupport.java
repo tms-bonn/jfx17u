@@ -8,7 +8,11 @@ import com.sun.glass.ui.TouchInputSupport;
 import com.sun.glass.ui.View;
 import com.sun.glass.ui.Window;
 
+import java.util.logging.Logger;
+
 final class GtkGestureSupport {
+
+    private static final Logger LOGGER = Logger.getLogger(GtkGestureSupport.class.getName());
 
     private native static void _initIDs();
 
@@ -37,6 +41,8 @@ final class GtkGestureSupport {
     public static void notifyNextTouchEvent(View view, int state, long id, int x,
                                             int y, int xAbs, int yAbs) {
 
+        LOGGER.fine("notifyNextTouchEvent: view: " + view + " state: " + state + " id: " + id + " x: " + x + " y: " + y + " xAbs: " + xAbs + " yAbs: " + yAbs);
+
         /*
             Some touch monitors deliver touch_moved even when the finger is not moving.
             This means that row selection clicks are not recognized.
@@ -44,6 +50,7 @@ final class GtkGestureSupport {
          */
         if(state == TouchEvent.TOUCH_MOVED && xAbs == touchPressedXAbs && yAbs == touchPressedYAbs && touchSupport.getTouchCount() < 2)
         {
+            LOGGER.fine("notifyNextTouchEvent will be ignored");
             return;
         }
 
@@ -87,6 +94,7 @@ final class GtkGestureSupport {
                                             boolean isDirect,
                                             int x, int y, int xAbs,
                                             int yAbs, float scale) {
+        LOGGER.fine("gestureZoomPerformed: view: " + view + " modifiers: " + modifiers + " isDirect: " + isDirect + " x: " + x + " y: " + y + " xAbs: " + xAbs + " yAbs: " + yAbs + " scale: " + scale);
         GtkGestureSupport.modifiers = modifiers;
         GtkGestureSupport.isDirect = isDirect;
 
@@ -98,6 +106,7 @@ final class GtkGestureSupport {
                                             boolean isDirect,
                                             int x, int y, int xAbs,
                                             int yAbs, float rotation) {
+        LOGGER.fine("gestureRotatePerformed: view: " + view + " modifiers: " + modifiers + " isDirect: " + isDirect + " x: " + x + " y: " + y + " xAbs: " + xAbs + " yAbs: " + yAbs + " rotation: " + rotation);
         GtkGestureSupport.modifiers = modifiers;
         GtkGestureSupport.isDirect = isDirect;
 
@@ -110,6 +119,7 @@ final class GtkGestureSupport {
                                             boolean isDirect,
                                             int x, int y, int xAbs,
                                             int yAbs, float offsetX, float offsetY) {
+        LOGGER.fine("gestureRotatePerformed: view: " + view + " modifiers: " + modifiers + " isDirect: " + isDirect + " x: " + x + " y: " + y + " xAbs: " + xAbs + " yAbs: " + yAbs + " offsetX: " + offsetX + " offsetY: " + offsetY);
         GtkGestureSupport.modifiers = modifiers;
         GtkGestureSupport.isDirect = isDirect;
 
@@ -129,8 +139,9 @@ final class GtkGestureSupport {
         }
     }
 
-    private static void gestureFinished(View view, int touchCount,
-                                        boolean isInertia) {
+    private static void gestureFinished(View view, int touchCount, boolean isInertia) {
+        LOGGER.fine("gestureFinished: view: " + view + " touchCount: " + touchCount + " isInertia: " + isInertia);
+
         if (view == null) {
             return;
         }

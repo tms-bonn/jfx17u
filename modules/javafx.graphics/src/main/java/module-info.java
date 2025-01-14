@@ -45,6 +45,7 @@ module javafx.graphics {
     requires jdk.unsupported;
 
     requires transitive javafx.base;
+    requires java.logging;
 
     exports javafx.animation;
     exports javafx.application;

@@ -30,12 +30,15 @@ import com.sun.glass.events.TouchEvent;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class TouchInputSupport
 {
+    private static final Logger LOGGER = Logger.getLogger(TouchInputSupport.class.getName());
+
     private int touchCount = 0;
 
-    private boolean filterTouchCoordinates;
+    private final boolean filterTouchCoordinates;
     private static class TouchCoord {
         private final int x, y, xAbs, yAbs;
 
@@ -48,7 +51,7 @@ public class TouchInputSupport
     }
     private Map<Long, TouchCoord> touch;
 
-    private TouchCountListener listener;
+    private final TouchCountListener listener;
 
     private int curTouchCount;
     private View curView;
@@ -78,6 +81,8 @@ public class TouchInputSupport
     public void notifyBeginTouchEvent(View view, int modifiers, boolean isDirect,
                                       int touchEventCount) {
 
+        LOGGER.fine("notifyBeginTouchEvent: view: " + view + " modifiers: " + modifiers + "; isDirect: " + isDirect + "; touchEventCount: " + touchEventCount);
+
         if (curView != null && view != curView && touchCount != 0 && touch != null) {
             if (!curView.isClosed()) {
                 // Release the currently pressed touch points
@@ -105,6 +110,8 @@ public class TouchInputSupport
     }
 
     public void notifyEndTouchEvent(View view) {
+        LOGGER.fine("notifyEndTouchEvent: view: " + view);
+
         if (view == null) {
             return;
         }
@@ -121,6 +128,8 @@ public class TouchInputSupport
     public void notifyNextTouchEvent(View view, int state, long id, int x, int y,
                                      int xAbs, int yAbs)
     {
+        LOGGER.fine("notifyNextTouchEvent: view: " + view + " state: " + state + " id: " + id);
+
         switch (state) {
             case TouchEvent.TOUCH_RELEASED:
                 touchCount--;
@@ -146,6 +155,9 @@ public class TouchInputSupport
     }
 
     private int filterTouchInputState(int state, long id, int x, int y, int xAbs, int yAbs) {
+
+        LOGGER.fine("filterTouchInputState: state: " + state + " id: " + id);
+
         switch (state) {
             case TouchEvent.TOUCH_RELEASED:
                 touch.remove(id);
@@ -171,6 +183,8 @@ public class TouchInputSupport
 
     public void releaseTouchEvents(View view)
     {
+        LOGGER.fine("releaseTouchEvents: view: " + view + " touchCount: " + touchCount + " touch: " + touch);
+
         if(touchCount != 0 && touch != null)
         {
             if (!view.isClosed()) {
