@@ -30,6 +30,7 @@ import com.sun.glass.events.TouchEvent;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class TouchInputSupport
@@ -81,8 +82,6 @@ public class TouchInputSupport
     public void notifyBeginTouchEvent(View view, int modifiers, boolean isDirect,
                                       int touchEventCount) {
 
-        LOGGER.fine("notifyBeginTouchEvent: view: " + view + " modifiers: " + modifiers + "; isDirect: " + isDirect + "; touchEventCount: " + touchEventCount);
-
         if (curView != null && view != curView && touchCount != 0 && touch != null) {
             if (!curView.isClosed()) {
                 // Release the currently pressed touch points
@@ -110,8 +109,6 @@ public class TouchInputSupport
     }
 
     public void notifyEndTouchEvent(View view) {
-        LOGGER.fine("notifyEndTouchEvent: view: " + view);
-
         if (view == null) {
             return;
         }
@@ -128,8 +125,6 @@ public class TouchInputSupport
     public void notifyNextTouchEvent(View view, int state, long id, int x, int y,
                                      int xAbs, int yAbs)
     {
-        LOGGER.fine("notifyNextTouchEvent: view: " + view + " state: " + state + " id: " + id);
-
         switch (state) {
             case TouchEvent.TOUCH_RELEASED:
                 touchCount--;
@@ -155,16 +150,18 @@ public class TouchInputSupport
     }
 
     private int filterTouchInputState(int state, long id, int x, int y, int xAbs, int yAbs) {
-
-        LOGGER.fine("filterTouchInputState: state: " + state + " id: " + id);
-
         switch (state) {
             case TouchEvent.TOUCH_RELEASED:
                 touch.remove(id);
                 break;
             case TouchEvent.TOUCH_MOVED:
                 TouchCoord c = touch.get(id);
-                if (x == c.x && y == c.y) {
+                if(c == null)
+                {
+                    // Prevent NPE
+                    LOGGER.warning("Event TOUCH_MOVED with id: " + id + " will be ignored.");
+                }
+                if (c != null && x == c.x && y == c.y) {
                     state = TouchEvent.TOUCH_STILL;
                     break;
                 }
@@ -183,7 +180,11 @@ public class TouchInputSupport
 
     public void releaseTouchEvents(View view)
     {
-        LOGGER.fine("releaseTouchEvents: view: " + view + " touchCount: " + touchCount + " touch: " + touch);
+        if(LOGGER.isLoggable(Level.FINE))
+        {
+            LOGGER.fine("releaseTouchEvents: view: " + view + " touchCount: " + touchCount + " touch-IDs: " +
+                        touch.keySet());
+        }
 
         if(touchCount != 0 && touch != null)
         {

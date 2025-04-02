@@ -29,9 +29,9 @@ final class GtkGestureSupport {
     private static int touchPressedXAbs;
     private static int touchPressedYAbs;
 
-    public static void notifyBeginTouchEvent(View view, int modifiers,
-                                             boolean isDirect,
+    public static void notifyBeginTouchEvent(View view, int modifiers, boolean isDirect, long id,
                                              int touchEventCount) {
+        LOGGER.fine("notifyBeginTouchEvent: view: " + view + ", modifiers: " + modifiers + ", isDirect: " + isDirect + ", id: " + id + ", touchEventCount: " + touchEventCount);
         GtkGestureSupport.modifiers = modifiers;
         touchPressedXAbs = 0;
         touchPressedYAbs = 0;
@@ -78,7 +78,8 @@ final class GtkGestureSupport {
         }
     }
 
-    public static void notifyEndTouchEvent(View view) {
+    public static void notifyEndTouchEvent(View view, long id) {
+        LOGGER.fine("notifyEndTouchEvent: view: " + view + ", id: " + id);
         touchPressedXAbs = 0;
         touchPressedYAbs = 0;
         touchSupport.notifyEndTouchEvent(view);
@@ -87,6 +88,7 @@ final class GtkGestureSupport {
 
     public static void gestureReleaseTouchEvents(View view)
     {
+        LOGGER.fine("gestureReleaseTouchEvents: view: " + view);
         touchSupport.releaseTouchEvents(view);
     }
 
@@ -119,7 +121,7 @@ final class GtkGestureSupport {
                                             boolean isDirect,
                                             int x, int y, int xAbs,
                                             int yAbs, float offsetX, float offsetY) {
-        LOGGER.fine("gestureRotatePerformed: view: " + view + " modifiers: " + modifiers + " isDirect: " + isDirect + " x: " + x + " y: " + y + " xAbs: " + xAbs + " yAbs: " + yAbs + " offsetX: " + offsetX + " offsetY: " + offsetY);
+        LOGGER.fine("gestureDragUpdatePerformed: view: " + view + " modifiers: " + modifiers + " isDirect: " + isDirect + " x: " + x + " y: " + y + " xAbs: " + xAbs + " yAbs: " + yAbs + " offsetX: " + offsetX + " offsetY: " + offsetY);
         GtkGestureSupport.modifiers = modifiers;
         GtkGestureSupport.isDirect = isDirect;
 

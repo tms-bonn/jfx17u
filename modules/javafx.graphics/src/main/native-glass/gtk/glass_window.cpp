@@ -166,7 +166,7 @@ void WindowContextBase::process_touch_event(GdkEvent* event) {
             eventID = com_sun_glass_events_TouchEvent_TOUCH_PRESSED;
 
             mainEnv->CallStaticObjectMethod(jGestureCls, jGestureNotifyBeginTouchEvent,
-                                    jview, glass_modifier, jboolean(isDirect),
+                                    jview, glass_modifier, jboolean(isDirect), touchID,
                                     jint(1));
             CHECK_JNI_EXCEPTION(mainEnv);
 
@@ -190,7 +190,7 @@ void WindowContextBase::process_touch_event(GdkEvent* event) {
 
         if (event->type == GDK_TOUCH_END || event->type == GDK_TOUCH_CANCEL) {
             mainEnv->CallStaticObjectMethod(
-                    jGestureCls, jGestureNotifyEndTouchEvent, jview);
+                    jGestureCls, jGestureNotifyEndTouchEvent, jview, touchID);
             CHECK_JNI_EXCEPTION(mainEnv);
         }
 

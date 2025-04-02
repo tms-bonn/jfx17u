@@ -389,7 +389,7 @@ JNIEXPORT void JNICALL Java_com_sun_glass_ui_gtk_GtkGestureSupport__1initIDs(
 
     check_and_clear_exception(env);
 
-    jGestureNotifyBeginTouchEvent = env->GetStaticMethodID(clazz, "notifyBeginTouchEvent", "(Lcom/sun/glass/ui/View;IZI)V");
+    jGestureNotifyBeginTouchEvent = env->GetStaticMethodID(clazz, "notifyBeginTouchEvent", "(Lcom/sun/glass/ui/View;IZJI)V");
 
     check_and_clear_exception(env);
 
@@ -397,7 +397,7 @@ JNIEXPORT void JNICALL Java_com_sun_glass_ui_gtk_GtkGestureSupport__1initIDs(
 
     check_and_clear_exception(env);
 
-    jGestureNotifyEndTouchEvent = env->GetStaticMethodID(clazz, "notifyEndTouchEvent", "(Lcom/sun/glass/ui/View;)V");
+    jGestureNotifyEndTouchEvent = env->GetStaticMethodID(clazz, "notifyEndTouchEvent", "(Lcom/sun/glass/ui/View;J)V");
 
     check_and_clear_exception(env);
 
