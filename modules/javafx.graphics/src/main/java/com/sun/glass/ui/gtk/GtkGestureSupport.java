@@ -62,15 +62,15 @@ final class GtkGestureSupport {
                 case TouchEvent.TOUCH_PRESSED:
                     touchPressedXAbs = xAbs;
                     touchPressedYAbs = yAbs;
-                    gtkView.notifyMouse(MouseEvent.DOWN, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers | KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
+                    gtkView.notifyMouse(MouseEvent.DOWN, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers | KeyEvent.MODIFIER_BUTTON_PRIMARY, false, false);
                     break;
                 case TouchEvent.TOUCH_MOVED:
-                    gtkView.notifyMouse(MouseEvent.DRAG, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers | KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
+                    gtkView.notifyMouse(MouseEvent.DRAG, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers | KeyEvent.MODIFIER_BUTTON_PRIMARY, false, false);
                     break;
                 case TouchEvent.TOUCH_RELEASED:
                     touchPressedXAbs = 0;
                     touchPressedYAbs = 0;
-                    gtkView.notifyMouse(MouseEvent.UP, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers == 0 ? modifiers : modifiers ^ KeyEvent.MODIFIER_BUTTON_PRIMARY, false, true);
+                    gtkView.notifyMouse(MouseEvent.UP, MouseEvent.BUTTON_LEFT, x, y, xAbs, yAbs, modifiers == 0 ? modifiers : modifiers ^ KeyEvent.MODIFIER_BUTTON_PRIMARY, false, false);
                     break;
                 default:
                     break;
